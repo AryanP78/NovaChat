@@ -8,6 +8,7 @@ import cors from "cors";
 
 import path from "path";
 import fs from "fs";
+import job from "./lib/cron.js";
 
 const app = express();
 const PORT = process.env.PORT;
@@ -32,4 +33,8 @@ if (fs.existsSync(publicDir)) {
 app.listen(PORT, () => {
   connectDb();
   console.log(`Server is up and running on port ${PORT}`);
+
+  if (process.env.NODE_ENV === "production") {
+    job.start();
+  }
 });
