@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build":" rm -rf dist && cp -R src dist",
     "dev": " node  --watch src/index.js"
   },
   "keywords": [],
