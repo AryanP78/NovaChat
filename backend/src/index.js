@@ -8,8 +8,9 @@ import path from "path";
 import fs from "fs";
 import job from "./lib/cron.js";
 import authRoutes from "./routes/auth.route.js";
+import messageRoute from "./routes/message.route.js";
+import { app, server } from "./lib/socket.js";
 
-const app = express();
 const PORT = process.env.PORT;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 const publicDir = path.join(process.cwd(), "public");
@@ -27,6 +28,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/messages", messageRoute);
 
 //* This is for Production Build
 if (fs.existsSync(publicDir)) {
@@ -41,7 +43,7 @@ if (fs.existsSync(publicDir)) {
 async function startServer() {
   await connectDb();
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server is up and running on port ${PORT}`);
 
     if (process.env.NODE_ENV === "production") {
