@@ -6,6 +6,12 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   let evt;
+  console.log("Clerk webhook request received", {
+    contentType: req.get("content-type"),
+    hasSvixId: Boolean(req.get("svix-id")),
+    hasSvixTimestamp: Boolean(req.get("svix-timestamp")),
+    hasSvixSignature: Boolean(req.get("svix-signature")),
+  });
 
   try {
     evt = await verifyWebhook(req);

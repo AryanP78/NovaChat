@@ -1,6 +1,5 @@
 import express from "express";
 import "dotenv/config";
-import User from "./models/User.js";
 
 import { clerkMiddleware } from "@clerk/express";
 import { connectDb } from "./lib/db.js";
@@ -17,9 +16,17 @@ const FRONTEND_URL = process.env.FRONTEND_URL;
 const publicDir = path.join(process.cwd(), "public");
 
 const clerkWebhookHandler = [
-  express.raw({ type: "application/json" }),
+  express.raw({ type: "*/*" }),
   clerkWebhook,
 ];
+
+app.get("/api/webhooks/clerk", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    route: "/api/webhooks/clerk",
+    expects: "POST",
+  });
+});
 
 app.use("/api/webhooks/clerk", clerkWebhookHandler);
 
@@ -41,11 +48,16 @@ if (fs.existsSync(publicDir)) {
   });
 }
 
-app.listen(PORT, () => {
-  connectDb();
-  console.log(`Server is up and running on port ${PORT}`);
+async function startServer() {
+  await connectDb();
 
-  if (process.env.NODE_ENV === "production") {
-    job.start();
-  }
-});
+  app.listen(PORT, () => {
+    console.log(`Server is up and running on port ${PORT}`);
+
+    if (process.env.NODE_ENV === "production") {
+      job.start();
+    }
+  });
+}
+
+startServer();
