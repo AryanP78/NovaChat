@@ -6,19 +6,25 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   let evt;
+  const signingSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET?.trim();
+
   console.log("Clerk webhook request received", {
     contentType: req.get("content-type"),
     hasSvixId: Boolean(req.get("svix-id")),
     hasSvixTimestamp: Boolean(req.get("svix-timestamp")),
     hasSvixSignature: Boolean(req.get("svix-signature")),
+    hasSigningSecret: Boolean(signingSecret),
   });
 
   try {
-    evt = await verifyWebhook(req);
+    evt = await verifyWebhook(req, { signingSecret });
     console.log(`Clerk webhook verified: ${evt.type}`);
   } catch (error) {
     console.error("Clerk webhook verification failed:", error.message);
-    res.status(400).json({ message: "Webhook verification failed" });
+    res.status(400).json({
+      message: "Webhook verification failed",
+      error: error.message,
+    });
     return;
   }
 
