@@ -5,6 +5,7 @@ import User from "./models/User.js";
 import { clerkMiddleware } from "@clerk/express";
 import { connectDb } from "./lib/db.js";
 import cors from "cors";
+import clerkWebhook from "./webhooks/clerk.webhook.js";
 
 import path from "path";
 import fs from "fs";
@@ -32,8 +33,10 @@ app.get("/health", (req, res) => {
 //* This is for Production Build
 if (fs.existsSync(publicDir)) {
   app.use(express.static(publicDir));
-  app.get("/{*any}", (req, res) => {
-    res.sendFile(path.join(publicDir, "index.html"), (err) => nextTick(err));
+  app.get("/{*any}", (req, res, next) => {
+    res.sendFile(path.join(publicDir, "index.html"), (err) => {
+      if (err) next(err);
+    });
   });
 }
 
