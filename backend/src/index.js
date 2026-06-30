@@ -1,24 +1,20 @@
 import express from "express";
 import "dotenv/config";
-
 import { clerkMiddleware } from "@clerk/express";
 import { connectDb } from "./lib/db.js";
 import cors from "cors";
 import clerkWebhook from "./webhooks/clerk.webhook.js";
-
 import path from "path";
 import fs from "fs";
 import job from "./lib/cron.js";
+import authRoutes from "./routes/auth.route.js";
 
 const app = express();
 const PORT = process.env.PORT;
 const FRONTEND_URL = process.env.FRONTEND_URL;
 const publicDir = path.join(process.cwd(), "public");
 
-const clerkWebhookHandler = [
-  express.raw({ type: "*/*" }),
-  clerkWebhook,
-];
+const clerkWebhookHandler = [express.raw({ type: "*/*" }), clerkWebhook];
 
 app.use("/api/webhooks/clerk", clerkWebhookHandler);
 
@@ -29,6 +25,8 @@ app.use(clerkMiddleware());
 app.get("/health", (req, res) => {
   res.status(200).json({ ok: true });
 });
+
+app.use("/api/auth", authRoutes);
 
 //* This is for Production Build
 if (fs.existsSync(publicDir)) {
