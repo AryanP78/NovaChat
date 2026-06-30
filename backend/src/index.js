@@ -20,14 +20,6 @@ const clerkWebhookHandler = [
   clerkWebhook,
 ];
 
-app.get("/api/webhooks/clerk", (req, res) => {
-  res.status(200).json({
-    ok: true,
-    route: "/api/webhooks/clerk",
-    expects: "POST",
-  });
-});
-
 app.use("/api/webhooks/clerk", clerkWebhookHandler);
 
 app.use(express.json());

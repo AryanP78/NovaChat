@@ -8,23 +8,11 @@ router.post("/", async (req, res) => {
   let evt;
   const signingSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET?.trim();
 
-  console.log("Clerk webhook request received", {
-    contentType: req.get("content-type"),
-    hasSvixId: Boolean(req.get("svix-id")),
-    hasSvixTimestamp: Boolean(req.get("svix-timestamp")),
-    hasSvixSignature: Boolean(req.get("svix-signature")),
-    hasSigningSecret: Boolean(signingSecret),
-  });
-
   try {
     evt = await verifyWebhook(req, { signingSecret });
-    console.log(`Clerk webhook verified: ${evt.type}`);
   } catch (error) {
     console.error("Clerk webhook verification failed:", error.message);
-    res.status(400).json({
-      message: "Webhook verification failed",
-      error: error.message,
-    });
+    res.status(400).json({ message: "Webhook verification failed" });
     return;
   }
 
@@ -46,14 +34,11 @@ router.post("/", async (req, res) => {
         { clerkId: u.id, email, fullName, profilePic: u.image_url },
         { new: true, upsert: true, setDefaultsOnInsert: true },
       );
-
-      console.log(`Mongo user synced from Clerk: ${u.id}`);
     }
 
     if (evt.type === "user.deleted") {
       if (evt.data.id) {
         await User.findOneAndDelete({ clerkId: evt.data.id });
-        console.log(`Mongo user deleted from Clerk: ${evt.data.id}`);
       }
     }
 
