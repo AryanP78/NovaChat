@@ -1,30 +1,22 @@
 import express from "express";
 import User from "../models/User.js";
-import { verifyWebhook } from "@clerk/backend/webhooks";
+import { verifyWebhook } from "@clerk/express/webhooks";
 
 const router = express.Router();
 
 router.post("/", async (req, res) => {
+  let evt;
+
   try {
-    const signingSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
-    if (!signingSecret) {
-      res.status(503).json({ message: "Webhook secret is not provided" });
-      return;
-    }
+    evt = await verifyWebhook(req);
+    console.log(`Clerk webhook verified: ${evt.type}`);
+  } catch (error) {
+    console.error("Clerk webhook verification failed:", error.message);
+    res.status(400).json({ message: "Webhook verification failed" });
+    return;
+  }
 
-    // clerk's verifier expects a Web Request with the raw body; express.raw gives a Buffer.
-    const payload = Buffer.isBuffer(req.body)
-      ? req.body.toString("utf8")
-      : String(req.body);
-    const request = new Request("http://internal/webhooks/clerk", {
-      method: "POST",
-      headers: new Headers(req.headers),
-      body: payload,
-    });
-
-    // throws if the signature is wrong or the body was tampered with; only then do we trust evt.
-    const evt = await verifyWebhook(request, { signingSecret });
-
+  try {
     if (evt.type === "user.created" || evt.type === "user.updated") {
       const u = evt.data;
 
@@ -42,16 +34,21 @@ router.post("/", async (req, res) => {
         { clerkId: u.id, email, fullName, profilePic: u.image_url },
         { new: true, upsert: true, setDefaultsOnInsert: true },
       );
+
+      console.log(`Mongo user synced from Clerk: ${u.id}`);
     }
 
     if (evt.type === "user.deleted") {
-      if (evt.data.id) await User.findOneAndDelete({ clerkId: evt.data.id });
+      if (evt.data.id) {
+        await User.findOneAndDelete({ clerkId: evt.data.id });
+        console.log(`Mongo user deleted from Clerk: ${evt.data.id}`);
+      }
     }
 
     res.status(200).json({ received: true });
   } catch (error) {
-    console.error("Error in Clerk webhook:", error);
-    res.status(400).json({ message: "Webhook verification failed" });
+    console.error("Clerk webhook Mongo sync failed:", error);
+    res.status(500).json({ message: "Webhook received but Mongo sync failed" });
   }
 });
 
