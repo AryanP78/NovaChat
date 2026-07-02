@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   let evt;
-  const signingSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET?.trim();
+  const signingaSecret = process.env.CLERK_WEBHOOK_SIGNING_SECRET?.trim();
 
   try {
     evt = await verifyWebhook(req, { signingSecret });
